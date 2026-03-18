@@ -21,6 +21,7 @@ WorkFlow of graph [here](https://app.eraser.io/workspace/SanJdIPhCcQ0bBc0LJjf?or
 - [LangSmith](https://smith.langchain.com/) — debugging and tracking
 - [Groq](https://groq.com/) — LLM inference (openai/gpt-oss-120b )
 - [FastAPI](https://fastapi.tiangolo.com/) — HTTP server exposing the pipeline as an API
+- [web socket](https://developer.mozilla.org/en-US/docs/Web/API/WebSockets_API) — for real time files (codebase streaming)
 - [Pydantic](https://docs.pydantic.dev/) — structured output schemas for each node
 
 **Frontend (TypeScript)** 
