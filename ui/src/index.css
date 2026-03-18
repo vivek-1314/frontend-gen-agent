@@ -1,0 +1,77 @@
+@import '@fontsource/ibm-plex-mono/400.css';
+@import '@fontsource/ibm-plex-mono/500.css';
+@import '@fontsource/ibm-plex-mono/600.css';
+@import '@fontsource/inter/400.css';
+@import '@fontsource/inter/500.css';
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 0 0% 5.1%;
+    --foreground: 0 0% 91%;
+    --card: 0 0% 7.8%;
+    --card-foreground: 0 0% 91%;
+    --popover: 0 0% 7.8%;
+    --popover-foreground: 0 0% 91%;
+    --primary: 142 71% 45%;
+    --primary-foreground: 0 0% 5.1%;
+    --secondary: 0 0% 13.3%;
+    --secondary-foreground: 0 0% 91%;
+    --muted: 0 0% 10.2%;
+    --muted-foreground: 0 0% 53.3%;
+    --accent: 0 0% 13.3%;
+    --accent-foreground: 0 0% 91%;
+    --destructive: 0 69% 71.8%;
+    --destructive-foreground: 0 0% 5.1%;
+    --border: 0 0% 16.5%;
+    --input: 0 0% 16.5%;
+    --ring: 142 71% 45%;
+    --radius: 0.125rem;
+
+    --bg: #0d0d0d;
+    --bg2: #141414;
+    --bg3: #1a1a1a;
+    --bg4: #222222;
+    --border-main: #2a2a2a;
+    --border2: #333333;
+    --text: #e8e8e8;
+    --text2: #888888;
+    --text3: #555555;
+    --green: #22c55e;
+    --red: #f87171;
+    --blue: #60a5fa;
+    --cyan: #22d3ee;
+    --amber: #f59e0b;
+    --purple: #a78bfa;
+    --orange: #f97316;
+    --code-text: #9da5b4;
+
+    --sidebar-background: 0 0% 7.8%;
+    --sidebar-foreground: 0 0% 91%;
+    --sidebar-primary: 142 71% 45%;
+    --sidebar-primary-foreground: 0 0% 5.1%;
+    --sidebar-accent: 0 0% 13.3%;
+    --sidebar-accent-foreground: 0 0% 91%;
+    --sidebar-border: 0 0% 16.5%;
+    --sidebar-ring: 142 71% 45%;
+  }
+
+  * {
+    @apply border-border;
+  }
+
+  body {
+    font-family: 'Inter', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    margin: 0;
+    overflow: hidden;
+  }
+}
+
+.font-mono {
+  font-family: 'IBM Plex Mono', monospace !important;
+}
