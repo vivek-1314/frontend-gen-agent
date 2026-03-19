@@ -6,6 +6,10 @@ import src.app.ws_context as ctx
 app = FastAPI()
 current_ws = None
 
+@app.get("/health")
+async def health():
+    return {"status": "ok"}
+
 agent = build_graph()
 @app.websocket("/ws")
 async def websocket_endpoint(ws: WebSocket):
