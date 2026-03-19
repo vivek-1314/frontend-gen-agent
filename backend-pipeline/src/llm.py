@@ -4,6 +4,10 @@ from pydantic import BaseModel
 from dotenv import load_dotenv
 load_dotenv()
 
-llm = ChatGroq(
-    model="openai/gpt-oss-120b"
-)
+from langchain_groq import ChatGroq
+
+def llm(api_key: str) -> ChatGroq:
+    return ChatGroq(
+        model="llama-3.3-70b-versatile",
+        api_key=api_key
+    )

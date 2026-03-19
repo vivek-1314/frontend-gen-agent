@@ -62,6 +62,8 @@ export default function Index() {
   const logRef = useRef<HTMLDivElement>(null);
   const isFirstFileRef = useRef(true);
   const fileCountRef = useRef(0);
+  const [apiKey, setApiKey] = useState("")
+  const [showKey, setShowKey] = useState(false)
 
   useEffect(() => {
     if (logRef.current) logRef.current.scrollTop = logRef.current.scrollHeight;
@@ -100,7 +102,7 @@ export default function Index() {
     ws.onopen = () => {
       setStatus("connected");
       addLog("status", "Connected. Sending prompt...");
-      ws.send(JSON.stringify({ prompt }));
+      ws.send(JSON.stringify({ prompt, api_key: apiKey }));  // ← add api_key here
     };
 
     ws.onmessage = (e) => {
@@ -145,7 +147,7 @@ export default function Index() {
         wsRef.current = null;
       }
     };
-  }, [prompt, wsUrl, resetState, addLog]);
+  }, [prompt, wsUrl, apiKey, resetState, addLog]);
 
   const isRunning = status === "connecting" || status === "connected";
 
@@ -187,6 +189,30 @@ export default function Index() {
           {status}
         </div>
         <DownloadButton files={files} />
+      </div>
+
+      {/* API Key bar */}
+      <div style={{ background: "var(--bg3)", borderBottom: "1px solid var(--border-main)", display: "flex", alignItems: "center", padding: "5px 12px", gap: 8, flexShrink: 0 }}>
+        <span style={{ fontSize: 11, color: "var(--text2)", fontFamily: "'IBM Plex Mono', monospace", whiteSpace: "nowrap" }}>
+          GROQ_API_KEY
+        </span>
+        <input
+          value={apiKey}
+          onChange={(e) => setApiKey(e.target.value)}
+          type={showKey ? "text" : "password"}
+          placeholder="gsk_••••••••••••••••••••••••"
+          style={{ flex: 1, background: "var(--bg4)", border: "1px solid var(--border-main)", color: "var(--text)", padding: "5px 10px", fontSize: 12, fontFamily: "'IBM Plex Mono', monospace", outline: "none", borderRadius: 2 }}
+        />
+        <button
+          type="button"
+          onClick={() => setShowKey((v) => !v)}
+          style={{ background: "none", border: "1px solid var(--border-main)", color: "var(--text2)", padding: "4px 8px", fontSize: 11, fontFamily: "'IBM Plex Mono', monospace", cursor: "pointer", borderRadius: 2 }}
+        >
+          {showKey ? "hide" : "show"}
+        </button>
+        <span style={{ fontSize: 10, color: "var(--text2)", fontFamily: "'IBM Plex Mono', monospace", opacity: 0.6, whiteSpace: "nowrap" }}>
+          🔒 not stored
+        </span>
       </div>
 
       {/* Prompt bar */}

@@ -3,7 +3,6 @@ from langgraph.graph import StateGraph
 from src.app.nodes.intent_node import intent_node
 from src.app.nodes.blueprint_node import blueprint_node
 from src.app.nodes.section_planner_node import section_planner_node
-from src.app.nodes.folder_struct_node import folder_struct_node
 from src.app.nodes.section_generator_node import section_builder_node
 from src.app.nodes.page_generator import page_generator_node
 from src.app.state import State
@@ -16,7 +15,6 @@ def build_graph() :
     graph.add_node("intent_node", intent_node)
     graph.add_node("blueprint_node", blueprint_node)
     graph.add_node("section_planner_node", section_planner_node)
-    graph.add_node("folder_struct_node", folder_struct_node)
     graph.add_node("section_builder_node", section_builder_node)
     graph.add_node("page_generator_node", page_generator_node)
 
@@ -42,14 +40,7 @@ def build_graph() :
 )
     
 
-    # graph.add_edge("design_system_node", "section_builder_node")
-    # graph.add_edge("folder_struct_node", "section_builder_node")
-
     agent = graph.compile()
-    
-    # mermaid = agent.get_graph().draw_mermaid()
-    # with open("graph.mmd", "w") as f:
-    #     f.write(mermaid)
     
     print("Graph Compiled Successfully ✅")
 

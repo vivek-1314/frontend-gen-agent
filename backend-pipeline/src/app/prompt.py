@@ -32,7 +32,8 @@ def blueprint_node_prompt(intent: dict, user_input: str) -> str:
         Not more then 3 pages and 4 section per page **this is max limit not min** so if required less make less .
 
         pages name and sections name should be of one_word 
-        examples : "herosection" or "footer"
+        return in this format:
+          pages: Dict[str, List[str]]
         """
 
         return prompt
@@ -51,14 +52,13 @@ def section_planner_node_prompt(state: dict) -> str:
         - Every section must be self-contained and reusable with a single responsibility
         - Every section must have meaningful animations — match intensity to the animation_level in intent
         - Think in layers: Page → Section
-        - Identify shared/reusable section across pages (Button, Card, SectionHeading etc.)
 
         Intent: {intent}
         Blueprint: {blueprint}
         user_prompt: {user_prompt}
 
         Generate a structured output where for each section, it has:
-        - section: name same as from blueprint
+        - section: **name same as in blueprint**
         - props: dictionary with text/images/links (example: headline, description, image)
         """
     
@@ -72,11 +72,12 @@ def section_generator_prompt(section_input: dict):
         MOTION: {section_input['motion']}
         
         RULES:
-        - "use client" at top
+        - "use client" at top strictly at top of the file
         - Tailwind + Framer Motion (motion.div, variants, staggerChildren) — no CSS transitions
 
         "Create a premium, modern website section with a clean and minimal design. Use neutral colors, subtle gradients, and plenty of white space. The section should have:
         - A clear, elegant headline and subheadline
+        - do not use images if not required but if required use placeholder images from unsplash with relevant keywords
         - Well-organized content blocks (text, icons, buttons)
         - Optional call-to-action button with subtle hover effect
         - Consistent spacing, alignment, and typography for readability
@@ -87,40 +88,19 @@ def section_generator_prompt(section_input: dict):
         - Before returning the code, internally verify that the section would compile successfully in a Next.js + TypeScript project and that **no type errors would occur**.
         - Dont give anchor tag inside link tags.
 
-        OUTPUT: Return a tool call with this schema:
+        
+        - Never use custom HTML tags (e.g. <story>, <section-wrapper>, <card>).
+        - Only use standard HTML elements (div, section, article, main, p, h1–h6, span, etc.)
+
+        All section components must use default export:
+        export default function HeroSection() {{}}
+
+        output:
         {{
             "code": "<React TSX code as plain text>"
         }}
-        Return ONLY the tool call, no extra text.
+        **no extra text np json np commas**.
         """ 
-
-def folder_struct_node_prompt():
-    tech_stack = "Next.js + Tailwind + Framer Motion"
-    site_type = "frontend website"
-    
-    prompt_text = f"""
-        You are generating the front-end project for a SaaS site.
-        
-        You have access to these tools:
-        - write_file(path: str, content: str) -> Save content to a file
-        - read_file(path: str) -> Read content from a file
-        - list_files() -> List all files in current folder
-        - get_current_directory() -> Get current directory path
-
-        Task:
-        1. Decide the folder structure based on tech stack and blueprint.
-        2. For each section/page, use write_file() to save it to the correct path.
-        3. ALWAYS return **tool calls**, do not just output text. 
-        4. Example tool usage: write_file("sections/Header.tsx", "<Header /> section code")
-
-        You are generating a front-end project.
-        - Always return a JSON array of tool calls.
-        - Each tool call should have the form:
-        {{"tool": "write_file", "arguments": {{"path": "...", "content": "..."}}}}
-        - Only output JSON. No extra explanation.
-        """
-
-    return prompt_text
 
 def page_generator_prompt():
     prompt = f"""
@@ -140,11 +120,17 @@ def page_generator_prompt():
 
     Example import:
     also use "use client" at the top of the file. if required
-    write in files when importing something HeroSection from "./Sections/hero" *for home page only*
-    write in files when importing something Footer from "../Sections/footer"  *for other's page*
 
-    OUTPUT: return via the structured output tool with a single field containing the React TSX code (default export). No extra text.
+    Import sections based on the page's depth:
+    - src/app/page.tsx → import X from "./Sections/X"
+    - src/app/[route]/page.tsx → import X from "../Sections/X"
+
+    OUTPUT: return single field containing the React TSX code.**no extra text np json np commas**.
     Ensure the code compiles in Next.js + TypeScript (no type errors).
+
+    Always import sections as default imports (no curly braces):
+    - import HeroSection from "./Sections/HeroSection"
+    - NEVER: import {{HeroSection}} from "./Sections/HeroSection"
     """
 
     return prompt

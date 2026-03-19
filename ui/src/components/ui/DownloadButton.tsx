@@ -1,276 +1,196 @@
+"use client";
+
 import JSZip from "jszip";
 import { useCallback } from "react";
 
-interface FileData {
-  path: string;
+// ─── Types ────────────────────────────────────────────────────────────────────
+
+interface GeneratedFile {
+  path: string;   // e.g. "sections/HeroSection.tsx" or "app/about/page.tsx"
   content: string;
 }
 
 interface DownloadButtonProps {
-  files: FileData[];
+  files: GeneratedFile[];
 }
 
-// ─── Scaffold ─────────────────────────────────────────────────────────────────
+// ─── Path mapper ──────────────────────────────────────────────────────────────
+// Normalises whatever path your pipeline emits into the correct src/app/… tree.
 
-const PACKAGE_JSON = `{
-  "name": "generated-site",
-  "version": "0.1.0",
-  "private": true,
-  "scripts": {
-    "dev": "next dev",
-    "build": "next build",
-    "start": "next start",
-    "lint": "eslint"
-  },
-  "dependencies": {
-    "framer-motion": "^12.35.0",
-    "lucide-react": "^0.577.0",
-    "next": "16.1.6",
-    "react": "19.2.3",
-    "react-dom": "19.2.3"
-  },
-  "devDependencies": {
-    "@tailwindcss/postcss": "^4",
-    "@types/node": "^20",
-    "@types/react": "^19",
-    "@types/react-dom": "^19",
-    "eslint": "^9",
-    "eslint-config-next": "16.1.6",
-    "tailwindcss": "^4",
-    "typescript": "^5"
-  }
-}`;
+function mapPath(raw: string): string {
+  const p = raw.replace(/^\//, ""); // strip leading slash
 
-const TSCONFIG = `{
-  "compilerOptions": {
-    "target": "ES2017",
-    "lib": ["dom", "dom.iterable", "esnext"],
-    "allowJs": true,
-    "skipLibCheck": true,
-    "strict": true,
-    "noEmit": true,
-    "esModuleInterop": true,
-    "module": "esnext",
-    "moduleResolution": "bundler",
-    "resolveJsonModule": true,
-    "isolatedModules": true,
-    "jsx": "react-jsx",
-    "incremental": true,
-    "plugins": [{ "name": "next" }],
-    "paths": { "@/*": ["./*"] }
-  },
-  "include": [
-    "next-env.d.ts",
-    "**/*.ts",
-    "**/*.tsx",
-    ".next/types/**/*.ts",
-    ".next/dev/types/**/*.ts",
-    "**/*.mts"
+  // Already fully qualified
+  if (p.startsWith("src/")) return p;
+
+  // sections/Foo.tsx  →  src/app/sections/Foo.tsx
+  if (p.startsWith("sections/")) return `src/app/${p}`;
+
+  // components/Foo.tsx  →  src/app/components/Foo.tsx
+  if (p.startsWith("components/")) return `src/app/${p}`;
+
+  // app/about/page.tsx  →  src/app/about/page.tsx
+  if (p.startsWith("app/")) return `src/${p}`;
+
+  // page.tsx / about/page.tsx  →  src/app/page.tsx / src/app/about/page.tsx
+  return `src/app/${p}`;
+}
+
+// ─── Next.js boilerplate scaffold ─────────────────────────────────────────────
+
+const SCAFFOLD: Record<string, string> = {
+  "package.json": JSON.stringify(
+    {
+      name: "generated-site",
+      version: "0.1.0",
+      private: true,
+      scripts: {
+        dev: "next dev",
+        build: "next build",
+        start: "next start",
+        lint: "next lint",
+      },
+      dependencies: {
+        next: "14.2.5",
+        react: "^18",
+        "react-dom": "^18",
+        "framer-motion": "^11.0.0",
+        "lucide-react": "^0.400.0",
+        clsx: "^2.1.0",
+      },
+      devDependencies: {
+        "@types/node": "^20",
+        "@types/react": "^18",
+        "@types/react-dom": "^18",
+        autoprefixer: "^10.0.1",
+        eslint: "^8",
+        "eslint-config-next": "14.2.5",
+        postcss: "^8",
+        tailwindcss: "^3.4.1",
+        typescript: "^5",
+      },
+    },
+    null,
+    2
+  ),
+
+  "tsconfig.json": JSON.stringify(
+    {
+      compilerOptions: {
+        lib: ["dom", "dom.iterable", "esnext"],
+        allowJs: true,
+        skipLibCheck: true,
+        strict: true,
+        noEmit: true,
+        esModuleInterop: true,
+        module: "esnext",
+        moduleResolution: "bundler",
+        resolveJsonModule: true,
+        isolatedModules: true,
+        jsx: "preserve",
+        incremental: true,
+        plugins: [{ name: "next" }],
+        paths: { "@/*": ["./src/*"] },
+      },
+      include: ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
+      exclude: ["node_modules"],
+    },
+    null,
+    2
+  ),
+
+  "next.config.js": `/** @type {import('next').NextConfig} */
+const nextConfig = {};
+
+module.exports = nextConfig;
+`,
+
+  "tailwind.config.ts": `import type { Config } from "tailwindcss";
+
+const config: Config = {
+  content: [
+    "./src/pages/**/*.{js,ts,jsx,tsx,mdx}",
+    "./src/components/**/*.{js,ts,jsx,tsx,mdx}",
+    "./src/app/**/*.{js,ts,jsx,tsx,mdx}",
   ],
-  "exclude": ["node_modules"]
-}`;
-
-const POSTCSS_CONFIG = `const config = {
-  plugins: {
-    "@tailwindcss/postcss": {},
-  },
+  theme: { extend: {} },
+  plugins: [],
 };
 
 export default config;
-`;
+`,
 
-const NEXT_CONFIG = `import type { NextConfig } from "next";
-
-const nextConfig: NextConfig = {
-  allowedDevOrigins: [
-    "192.168.137.1",
-    "localhost"
-  ],
+  // Object syntax required by Next.js 14 — array syntax breaks postcss
+  "postcss.config.js": `/** @type {import('postcss').Config} */
+const config = {
+  plugins: {
+    tailwindcss: {},
+    autoprefixer: {},
+  },
 };
+module.exports = config;
+`,
 
-export default nextConfig;
-`;
+  ".eslintrc.json": JSON.stringify({ extends: "next/core-web-vitals" }, null, 2),
 
-const ESLINT_CONFIG = `import { defineConfig, globalIgnores } from "eslint/config";
-import nextVitals from "eslint-config-next/core-web-vitals";
-import nextTs from "eslint-config-next/typescript";
-
-const eslintConfig = defineConfig([
-  ...nextVitals,
-  ...nextTs,
-  globalIgnores([
-    ".next/**",
-    "out/**",
-    "build/**",
-    "next-env.d.ts",
-  ]),
-]);
-
-export default eslintConfig;
-`;
-
-const GITIGNORE = `# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
-
-# dependencies
-/node_modules
+  ".gitignore": `.DS_Store
+node_modules
 /.pnp
-.pnp.*
-.yarn/*
-!.yarn/patches
-!.yarn/plugins
-!.yarn/releases
-!.yarn/versions
-
-# testing
-/coverage
-
-# next.js
+.pnp.js
+/build
 /.next/
 /out/
-
-# production
-/build
-
-# misc
-.DS_Store
-*.pem
-
-# debug
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-.pnpm-debug.log*
-
-# env files
-.env*
-
-# vercel
-.vercel
-
-# typescript
-*.tsbuildinfo
 next-env.d.ts
-`;
+*.tsbuildinfo
+.env*.local
+`,
 
-const NEXT_ENV_DTS = `/// <reference types="next" />
-/// <reference types="next/image-types/global" />
-
-// NOTE: This file should not be edited
-// see https://nextjs.org/docs/app/api-reference/config/typescript for more information.
-`;
-
-const APP_GLOBALS_CSS = `@import "tailwindcss";
+  "src/app/globals.css": `@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --foreground-rgb: 0, 0, 0;
+  --background-rgb: 255, 255, 255;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    --foreground-rgb: 255, 255, 255;
+    --background-rgb: 0, 0, 0;
   }
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  color: rgb(var(--foreground-rgb));
+  background: rgb(var(--background-rgb));
 }
-`;
+`,
 
-const APP_LAYOUT = `import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+  "src/app/layout.tsx": `import type { Metadata } from "next";
+import { Inter } from "next/font/google";
 import "./globals.css";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
+const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
   title: "Generated Site",
-  description: "Generated by Idelyze AI",
+  description: "AI-generated Next.js site",
 };
 
 export default function RootLayout({
   children,
-}: Readonly<{
+}: {
   children: React.ReactNode;
-}>) {
+}) {
   return (
     <html lang="en">
-      <body className={\`\${geistSans.variable} \${geistMono.variable} antialiased\`}>
-        {children}
-      </body>
+      <body className={inter.className}>{children}</body>
     </html>
   );
 }
-`;
-
-const SCAFFOLD: Record<string, string> = {
-  "package.json": PACKAGE_JSON,
-  "tsconfig.json": TSCONFIG,
-  "postcss.config.mjs": POSTCSS_CONFIG,
-  "next.config.ts": NEXT_CONFIG,
-  "eslint.config.mjs": ESLINT_CONFIG,
-  ".gitignore": GITIGNORE,
-  "next-env.d.ts": NEXT_ENV_DTS,
-  "app/globals.css": APP_GLOBALS_CSS,
-  "app/layout.tsx": APP_LAYOUT,
+`,
 };
-
-// ─── Path mapper ──────────────────────────────────────────────────────────────
-// Sections/* → app/sections/*
-// Anything else root-level or unknown → app/*
-
-function mapPath(rawPath: string): string {
-  const parts = rawPath.split("/");
-  const top = parts[0];
-  const rest = parts.slice(1).join("/");
-
-  const MAP: Record<string, string> = {
-    Sections: "app/sections",
-    sections: "app/sections",
-    Components: "app/components",
-    components: "app/components",
-    Hooks: "app/hooks",
-    hooks: "app/hooks",
-    Lib: "lib",
-    lib: "lib",
-    Utils: "lib/utils",
-    utils: "lib/utils",
-    Types: "types",
-    types: "types",
-    Public: "public",
-    public: "public",
-  };
-
-  if (parts.length === 1) {
-    // root-level file like page.tsx → app/page.tsx
-    return `app/${rawPath}`;
-  }
-
-  if (MAP[top]) {
-    return `${MAP[top]}/${rest}`;
-  }
-
-  // unknown folder → put under app/
-  return `app/${rawPath}`;
-}
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
@@ -288,7 +208,7 @@ export default function DownloadButton({ files }: DownloadButtonProps) {
       root.file(path, content);
     });
 
-    // 3. Generated files — mapped to correct Next.js paths
+    // 2. Generated files — mapped to correct Next.js paths
     files.forEach((f) => {
       root.file(mapPath(f.path), f.content);
     });
@@ -324,7 +244,16 @@ export default function DownloadButton({ files }: DownloadButtonProps) {
         whiteSpace: "nowrap",
       }}
     >
-      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <svg
+        width="12"
+        height="12"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      >
         <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4" />
         <polyline points="7 10 12 15 17 10" />
         <line x1="12" y1="15" x2="12" y2="3" />

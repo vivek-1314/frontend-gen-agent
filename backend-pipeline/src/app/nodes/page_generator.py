@@ -10,6 +10,7 @@ import src.app.ws_context as ctx
 class PageCodeOutput(BaseModel):
     code: str
 
+
 async def page_generator_node(state: State) -> State:
 
     blueprint = state["blueprint"].pages
@@ -17,15 +18,12 @@ async def page_generator_node(state: State) -> State:
 
     pages = list(blueprint.keys())
 
-    print("curr page_idx", page_index, "from", len(pages))
-
     if page_index >= len(pages):
-        print("all pages generated stopping")
+        print("All pages generated ✅")
         return {"page_status": "Done"}
 
     page_name = pages[page_index]
     sections = blueprint[page_name]
-    print(sections)
     prompt = page_generator_prompt()
 
     messages = [
@@ -33,25 +31,25 @@ async def page_generator_node(state: State) -> State:
         HumanMessage(content=(
             f"Page Definition:\n"
             f"Page: {page_name}\n"
-            f"Allowed Sections also import according to this **section names only strictly**: {sections}\n\n"
+            f"Only import from these exact section names (no others): {sections}\n\n"
             f"Write the page. File path: app/{page_name.lower()}/page.tsx"
         )),
     ]
 
-    response = llm.with_structured_output(PageCodeOutput).invoke(messages)
+    response = llm(state["api_key"]).with_structured_output(PageCodeOutput).invoke(messages)
 
     if page_name.lower() == "home":
         path = "app/page.tsx"
     else:
         path = f"app/{page_name.lower()}/page.tsx"
 
-    write_file.invoke({
-        "path": path,
-        "content": response.code,
-    })
+    # Manually write the file in testing mode, comment out for production
+    # write_file.invoke({
+    #     "path": path,
+    #     "content": response.code,
+    # })
 
-    print(f"✅ {page_name} page generated")
-
+    # Send the file update through WebSocket
     ws = ctx.current_ws 
     if ws:
         await ws.send_json({

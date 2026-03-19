@@ -2,5 +2,5 @@ def main():
     print("Hello from ai-agent-frontend!")
 
 
-if __name__ == "__main__":
+if __name__ == "__main__mainn":
     main()

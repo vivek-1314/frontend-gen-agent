@@ -4,6 +4,7 @@ from fastapi import FastAPI, WebSocket
 
 class State(TypedDict) :
     user_prompt: str
+    api_key: str     
     intent: dict 
     blueprint: dict
     section_plan: dict
