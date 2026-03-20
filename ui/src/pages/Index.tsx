@@ -52,7 +52,7 @@ const TAG_COLORS: Record<string, string> = {
 
 export default function Index() {
   const [prompt, setPrompt] = useState("");
-  const [wsUrl, setWsUrl] = useState("ws://localhost:8000/ws");
+  const [wsUrl, setWsUrl] = useState("wss://frontend-gen-agent.onrender.com/ws");
   const [status, setStatus] = useState<ConnectionStatus>("idle");
   const [files, setFiles] = useState<FileData[]>([]);
   const [activeFile, setActiveFile] = useState<string | null>(null);
