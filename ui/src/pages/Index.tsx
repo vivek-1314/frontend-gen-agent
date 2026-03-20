@@ -1,6 +1,8 @@
 import { useState, useRef, useCallback, useEffect } from "react";
 // import DownloadButton from "../components/ui/download_button";
 import DownloadButton  from "../components/ui/DownloadButton";
+import {InfoTooltip} from "../components/ui/infobutton"
+
 
 type ConnectionStatus = "idle" | "connecting" | "connected" | "done" | "error";
 
@@ -91,7 +93,16 @@ export default function Index() {
   }, []);
 
   const startRun = useCallback(() => {
-    if (!prompt.trim()) return;
+    if (!prompt.trim()){
+      alert("Please enter a prompt to proceed.");
+      addLog("error", "Prompt is required");
+      return;
+    }
+    if (!apiKey.trim()){
+      alert("Please enter your API key to proceed.");
+      addLog("error", "API key is required");
+      return;
+    }
     resetState();
     setStatus("connecting");
     addLog("status", "Connecting to " + wsUrl);
@@ -193,6 +204,7 @@ export default function Index() {
 
       {/* API Key bar */}
       <div style={{ background: "var(--bg3)", borderBottom: "1px solid var(--border-main)", display: "flex", alignItems: "center", padding: "5px 12px", gap: 8, flexShrink: 0 }}>
+        <InfoTooltip text="The API key is used to authenticate your requests. It is only stored in memory and will not be saved or transmitted to any server. You can generate a key from your GROQ dashboard." />
         <span style={{ fontSize: 11, color: "var(--text2)", fontFamily: "'IBM Plex Mono', monospace", whiteSpace: "nowrap" }}>
           GROQ_API_KEY
         </span>
