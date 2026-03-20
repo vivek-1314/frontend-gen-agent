@@ -26,7 +26,7 @@ WorkFlow of graph [here](https://app.eraser.io/workspace/SanJdIPhCcQ0bBc0LJjf?or
 
 **Frontend (TypeScript)** 
 > The UI was scaffolded using Lovable — primary focus of this project was the backend pipeline.
-- [Next.js 14](https://nextjs.org/)
+- [React](https://reactjs.org/)
 - [Tailwind CSS](https://tailwindcss.com/) — styling
 
 ---
@@ -84,16 +84,10 @@ source venv/bin/activate        # Windows: venv\Scripts\activate
 pip install -r requirements.txt
 ```
 
-Create a `.env` file:
-
-```env
-GROQ_API_KEY=your_groq_api_key_here
-```
-
 Start the server:
 
 ```bash
-uvicorn src.server:app --reload
+python -m uvicorn src.server:app --reload
 ```
 
 The API will be live at `http://localhost:8000`.
@@ -114,9 +108,10 @@ The UI will be live at `http://localhost:3000`.
 
 1. Open `http://localhost:3000`
 2. Type a prompt describing the UI you want — e.g. *"A SaaS landing page with a hero section, feature cards, and a pricing table"*
-3. Hit **Generate**
-4. The pipeline runs, and the generated file tree appears in the code viewer on the right
-5. download whole project codebase .
+3. put the api key in frontend
+4. Hit **Generate**
+5. The pipeline runs, and the generated file tree appears in the code viewer on the right
+6. download whole project codebase .
 
 ---
 
